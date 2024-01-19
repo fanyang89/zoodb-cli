@@ -131,8 +131,15 @@ var cmdImport = &cli.Command{
 		for _, n := range db.Znodes {
 			p := filepath.Join(prefix, n.Path)
 			_, err = conn.Create(p, n.Data, 0, zk.WorldACL(zk.PermAll))
-			if err != nil && !errors.Is(err, zk.ErrNodeExists) {
-				bar.Describe(fmt.Sprintf("create %s failed, err: %v", p, err))
+			if err != nil {
+				if errors.Is(err, zk.ErrNodeExists) {
+					_, err = conn.Set(p, n.Data, -1)
+					if err != nil {
+						bar.Describe(fmt.Sprintf("set %s failed, err: %v", p, err))
+					}
+				} else {
+					bar.Describe(fmt.Sprintf("create %s failed, err: %v", p, err))
+				}
 			}
 			_ = bar.Add(1)
 		}
