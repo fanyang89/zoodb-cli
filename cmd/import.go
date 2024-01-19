@@ -69,6 +69,12 @@ var hostsFlag = &cli.StringFlag{
 	Name: "hosts",
 }
 
+var clearFlag = &cli.BoolFlag{
+	Name:    "clear",
+	Aliases: []string{"C"},
+	Value:   false,
+}
+
 func getDepth(key string) int {
 	// / for 1
 	// /zookeeper/config for 2
@@ -87,10 +93,37 @@ func (z *ZkZeroLogger) Printf(s string, i ...interface{}) {
 	log.Info().Msgf(s, i...)
 }
 
+func DeleteAll(conn *zk.Conn, path string) error {
+	children, _, err := conn.Children(path)
+	if err != nil {
+		return errors.Wrapf(err, "get children failed, path: %v", path)
+	}
+
+	if len(children) == 0 {
+		err = conn.Delete(path, -1)
+		if err != nil {
+			return errors.Wrapf(err, "delete %v failed", path)
+		}
+	} else {
+		for _, child := range children {
+			err = DeleteAll(conn, filepath.Join(path, child))
+			if err != nil {
+				return errors.Wrapf(err, "delete all %v failed", path)
+			}
+		}
+		err = conn.Delete(path, -1)
+		if err != nil {
+			return errors.Wrapf(err, "delete self %v failed", path)
+		}
+	}
+
+	return nil
+}
+
 var cmdImport = &cli.Command{
 	Name: "import",
 	Flags: []cli.Flag{
-		fileFlag, prefixFlag, hostsFlag, sessionTimeoutFlag, overwriteFlag,
+		fileFlag, prefixFlag, hostsFlag, sessionTimeoutFlag, overwriteFlag, clearFlag,
 	},
 	Action: func(c *cli.Context) error {
 		file := c.String("file")
@@ -141,6 +174,12 @@ var cmdImport = &cli.Command{
 		}()
 
 		prefix := c.String("prefix")
+		if c.Bool("clear") {
+			err = DeleteAll(conn, prefix)
+			if err != nil {
+				return err
+			}
+		}
 
 		bar := progressbar.Default(int64(len(db.Znodes)))
 		for _, n := range db.Znodes {
