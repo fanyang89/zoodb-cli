@@ -60,6 +60,11 @@ var sessionTimeoutFlag = &cli.DurationFlag{
 	Name: "session-timeout", Value: 10 * time.Second,
 }
 
+var overwriteFlag = &cli.BoolFlag{
+	Name:  "overwrite",
+	Value: false,
+}
+
 var hostsFlag = &cli.StringFlag{
 	Name: "hosts",
 }
@@ -85,7 +90,7 @@ func (z *ZkZeroLogger) Printf(s string, i ...interface{}) {
 var cmdImport = &cli.Command{
 	Name: "import",
 	Flags: []cli.Flag{
-		fileFlag, prefixFlag, hostsFlag, sessionTimeoutFlag,
+		fileFlag, prefixFlag, hostsFlag, sessionTimeoutFlag, overwriteFlag,
 	},
 	Action: func(c *cli.Context) error {
 		file := c.String("file")
@@ -143,9 +148,11 @@ var cmdImport = &cli.Command{
 			_, err = conn.Create(p, n.Data, 0, zk.WorldACL(zk.PermAll))
 			if err != nil {
 				if errors.Is(err, zk.ErrNodeExists) {
-					_, err = conn.Set(p, n.Data, -1)
-					if err != nil {
-						bar.Describe(fmt.Sprintf("set %s failed, err: %v", p, err))
+					if c.Bool("overwrite") {
+						_, err = conn.Set(p, n.Data, -1)
+						if err != nil {
+							bar.Describe(fmt.Sprintf("set %s failed, err: %v", p, err))
+						}
 					}
 				} else {
 					bar.Describe(fmt.Sprintf("create %s failed, err: %v", p, err))
