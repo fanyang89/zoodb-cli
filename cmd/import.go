@@ -56,6 +56,10 @@ var prefixFlag = &cli.StringFlag{
 	},
 }
 
+var sessionTimeoutFlag = &cli.DurationFlag{
+	Name: "session-timeout", Value: 10 * time.Second,
+}
+
 var hostsFlag = &cli.StringFlag{
 	Name: "hosts",
 }
@@ -81,7 +85,7 @@ func (z *ZkZeroLogger) Printf(s string, i ...interface{}) {
 var cmdImport = &cli.Command{
 	Name: "import",
 	Flags: []cli.Flag{
-		fileFlag, prefixFlag, hostsFlag,
+		fileFlag, prefixFlag, hostsFlag, sessionTimeoutFlag,
 	},
 	Action: func(c *cli.Context) error {
 		file := c.String("file")
@@ -108,7 +112,7 @@ var cmdImport = &cli.Command{
 
 		conn, events, err := zk.Connect(
 			strings.FieldsFunc(c.String("hosts"), func(r rune) bool { return r == ',' }),
-			10*time.Second, zk.WithLogger(&ZkZeroLogger{}))
+			c.Duration("session-timeout"), zk.WithLogger(&ZkZeroLogger{}))
 		if err != nil {
 			return errors.Wrap(err, "connect failed")
 		}
