@@ -72,6 +72,12 @@ func getDepth(key string) int {
 	return c
 }
 
+type ZkZeroLogger struct{}
+
+func (z *ZkZeroLogger) Printf(s string, i ...interface{}) {
+	log.Info().Msgf(s, i...)
+}
+
 var cmdImport = &cli.Command{
 	Name: "import",
 	Flags: []cli.Flag{
@@ -102,7 +108,7 @@ var cmdImport = &cli.Command{
 
 		conn, events, err := zk.Connect(
 			strings.FieldsFunc(c.String("hosts"), func(r rune) bool { return r == ',' }),
-			10*time.Second)
+			10*time.Second, zk.WithLogger(&ZkZeroLogger{}))
 		if err != nil {
 			return errors.Wrap(err, "connect failed")
 		}
@@ -150,6 +156,7 @@ var cmdImport = &cli.Command{
 			log.Warn().Err(err).Msg("sync failed")
 		}
 
+		bar.Describe("Import completed")
 		return nil
 	},
 }
