@@ -18,35 +18,6 @@ import (
 	"github.com/fanyang89/zoodb-cli/zoodb"
 )
 
-func fileExists(p string) (bool, error) {
-	_, err := os.Stat(p)
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	if err != nil {
-		return false, err
-	}
-	return true, nil
-}
-
-func getDepth(key string) int {
-	// / for 1
-	// /zookeeper/config for 2
-	c := 0
-	for _, a := range key {
-		if a == '/' {
-			c++
-		}
-	}
-	return c
-}
-
-type ZkZeroLogger struct{}
-
-func (z *ZkZeroLogger) Printf(s string, i ...interface{}) {
-	log.Info().Msgf(s, i...)
-}
-
 func DeleteAll(conn *zk.Conn, path string) error {
 	children, _, err := conn.Children(path)
 	if err != nil {
@@ -85,7 +56,7 @@ var cmdImport = &cli.Command{
 		if err != nil {
 			return errors.Wrap(err, "open failed")
 		}
-		defer fh.Close()
+		defer func() { _ = fh.Close() }()
 
 		s := bufio.NewScanner(fh)
 		db, err := zoodb.NewZooDb(s)

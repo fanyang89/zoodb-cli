@@ -6,8 +6,11 @@ import (
 
 func NewApp() *cli.App {
 	return &cli.App{
-		Name:     "zoodb-cli",
-		Usage:    "ZooKeeper database utils",
-		Commands: []*cli.Command{cmdImport},
+		Name:  "zoodb-cli",
+		Usage: "ZooKeeper database utils",
+		Commands: []*cli.Command{
+			cmdImport,
+			cmdDu,
+		},
 	}
 }

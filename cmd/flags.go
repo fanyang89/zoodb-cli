@@ -33,6 +33,16 @@ var prefixFlag = &cli.StringFlag{
 	},
 }
 
+var pathFlag = &cli.StringFlag{
+	Name: "path",
+	Action: func(c *cli.Context, s string) error {
+		if s == "" {
+			return errors.New("path is empty")
+		}
+		return nil
+	},
+}
+
 var sessionTimeoutFlag = &cli.DurationFlag{
 	Name: "session-timeout", Value: 10 * time.Second,
 }
