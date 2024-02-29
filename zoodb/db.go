@@ -24,6 +24,9 @@ func NewZooDb(s *bufio.Scanner) (*ZooDb, error) {
 	}
 
 	s.Scan()
+	for strings.HasPrefix(s.Text(), "WARNING") {
+		s.Scan()
+	}
 	db.LastProcessedZxid = hexStrToUint64(getValueByDelim(s.Text(), ":"))
 
 	s.Scan()
