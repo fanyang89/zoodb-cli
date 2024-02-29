@@ -21,6 +21,9 @@ import (
 func DeleteAll(conn *zk.Conn, path string) error {
 	children, _, err := conn.Children(path)
 	if err != nil {
+		if errors.Is(err, zk.ErrNoNode) {
+			return nil
+		}
 		return errors.Wrapf(err, "get children failed, path: %v", path)
 	}
 
